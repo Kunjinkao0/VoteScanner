@@ -1,12 +1,21 @@
 package f.z.nfcscan
 
+import Utils
 import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
+import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
+
 
 class MainActivity : AppCompatActivity() {
     private var nfcPendingIntent: PendingIntent? = null
@@ -35,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         if (NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             tagInfoTextView.text = Utils.bytesToHexString(tag?.id)
+
+            ping()
         }
     }
 
@@ -46,5 +57,26 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         nfcAdapter?.disableForegroundDispatch(this)
+    }
+
+    fun ping() {
+        val host = "http://192.168.31.132:3000";
+        val client = OkHttpClient();
+        val request = Request.Builder().url(host).build()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("TTT", e.toString())
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val data = response.body?.string()
+                    Log.v("TTT", "" + data)
+                } else {
+                    // Handle the error
+                    Log.e("TTT", "e.toString()")
+                }
+            }
+        })
     }
 }
