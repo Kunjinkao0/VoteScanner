@@ -11,10 +11,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<Button>(R.id.controller).setOnClickListener {
-            startActivity(Intent(this, ControllerActivity::class.java))
-        }
         findViewById<Button>(R.id.reader).setOnClickListener {
+            startActivity(Intent(this, ReaderActivity::class.java))
+        }
+        findViewById<Button>(R.id.controller).setOnClickListener {
             startActivity(Intent(this, ControllerActivity::class.java))
         }
     }

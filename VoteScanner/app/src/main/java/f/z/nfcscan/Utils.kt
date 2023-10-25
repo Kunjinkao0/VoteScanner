@@ -2,12 +2,13 @@
 
 package f.z.nfcscan
 
-const val API_HOST = "http://192.168.31.132:4399"
+const val TAG_OKHTTP = "OKHTTP"
+const val API_HOST = "http://192.168.31.132:4399/api"
 
-fun bytesToHexString(src: ByteArray?): String? {
+fun bytesToHexString(src: ByteArray?): String {
     val stringBuilder = StringBuilder("0x")
-    if (src == null || src.size <= 0) {
-        return null
+    if (src == null || src.isEmpty()) {
+        return "null"
     }
     val buffer = CharArray(2)
     for (i in src.indices) {

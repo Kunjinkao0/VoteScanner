@@ -14,9 +14,9 @@ const app = express();
 const port = 4399;
 
 app.use(bodyParser.json());
-app.use("/device", deviceRoute);
-app.use("/project", projectRoute);
-app.use("/vote", voteRoute);
+app.use("/api/device", deviceRoute);
+app.use("/api/project", projectRoute);
+app.use("/api/vote", voteRoute);
 
 app.listen(port, () => {
   initApp();
@@ -24,7 +24,7 @@ app.listen(port, () => {
 });
 
 function initApp() {
-  global.voteIndex = -1;
+  global.votingPid = null; // current voting pid
   global.devices = readFileObject(PATH_DEVICES);
   global.projects = readFileObject(PATH_PROJECTS);
   global.voteResults = readFileObject(PATH_VOTE_RESULTS);

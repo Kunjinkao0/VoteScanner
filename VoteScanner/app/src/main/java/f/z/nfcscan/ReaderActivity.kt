@@ -1,8 +1,8 @@
 package f.z.nfcscan
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.MediaPlayer
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Bundle
@@ -15,7 +15,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import java.io.IOException
-
 
 class ReaderActivity : AppCompatActivity() {
     private var nfcPendingIntent: PendingIntent? = null
@@ -43,9 +42,9 @@ class ReaderActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         if (NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
-            tagInfoTextView.text = bytesToHexString(tag?.id)
-
-            ping()
+            val deviceId = bytesToHexString(tag?.id)
+            tagInfoTextView.text = "Voting..."
+            voteCall(deviceId)
         }
     }
 
@@ -59,22 +58,39 @@ class ReaderActivity : AppCompatActivity() {
         nfcAdapter?.disableForegroundDispatch(this)
     }
 
-    fun ping() {
-        val host = "http://192.168.31.132:3000";
-        val client = OkHttpClient();
-        val request = Request.Builder().url(host).build()
+    private fun updateTextView(result: String) {
+        runOnUiThread {
+            tagInfoTextView.text = result
+        }
+    }
+
+    private fun playSoundEffect(audioResourceId: Int) {
+        val mediaPlayer = MediaPlayer.create(this, audioResourceId)
+        mediaPlayer.start()
+        mediaPlayer.setOnCompletionListener { mediaPlayer.release() }
+    }
+
+    private fun voteCall(deviceId: String) {
+        val url = "${API_HOST}/vote/submit?deviceId=${deviceId}"
+        val client = OkHttpClient()
+        val request = Request.Builder().url(url).get().build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("TTT", e.toString())
+                Log.e(TAG_OKHTTP, e.toString())
+                playSoundEffect(R.raw.read_invalid)
             }
 
             override fun onResponse(call: Call, response: Response) {
+                val data = response.body!!.string()
                 if (response.isSuccessful) {
-                    val data = response.body?.string()
-                    Log.v("TTT", "" + data)
+                    Log.v(TAG_OKHTTP, data)
+                    updateTextView("Succeed\n${deviceId}")
+                    playSoundEffect(R.raw.read_success)
                 } else {
-                    // Handle the error
-                    Log.e("TTT", "e.toString()")
+                    Log.e(TAG_OKHTTP, "ERROR in ${url}: ${response.message}")
+                    Log.e(TAG_OKHTTP, data)
+                    updateTextView("Failed\n${data}")
+                    playSoundEffect(R.raw.read_invalid)
                 }
             }
         })
