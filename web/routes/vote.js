@@ -31,14 +31,21 @@ router.get("/submit", (req, res) => {
     res.status(400).send(`Invalid deviceId.`);
     return;
   }
-  const { votingPid, projects, voteResults } = global;
+  const { votingPid, projects, voteResults, allowedDevices } = global;
   const currentPid = pid || votingPid;
   if (!currentPid) {
-    res.status(500).send(`Please provide a valid voting pid or start voting.`);
+    res.status(500).send(`Vote not started yet.`);
     return;
   }
   const result = voteResults.find(({ pid }) => pid === currentPid);
   const proj = projects.find((p) => p.pid === currentPid);
+
+  // if (process.env.LIMITED_DEVICES && !deviceId.startWith("admin")) {
+  //   if (!allowedDevices.includes(deviceId)) {
+  //     res.status(500).send(`This device is not a valid one to vote.`);
+  //     return;
+  //   }
+  // }
 
   if (deviceId === "admin-pop") {
     if (result.votes.length > 0) {

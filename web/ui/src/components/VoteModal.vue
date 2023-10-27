@@ -69,7 +69,7 @@ const nextClick = () => {
 
 const refreshVoteCount = async () => {
   try {
-    const result = await axios.get(`/vote/count?pid=${props.project.pid}`);
+    const result = await axios.get(`/api/vote/count?pid=${props.project.pid}`);
     total.value = result.count;
   } catch (e) {
   }
@@ -94,7 +94,7 @@ const toggleVote = async () => {
 let intervalSeq = -1;
 const startVote = async () => {
   try {
-    await axios.get(`/vote/start?pid=${props.project.pid}`);
+    await axios.get(`/api/vote/start?pid=${props.project.pid}`);
     isVoting.value = true;
 
     intervalSeq = setInterval(() => {
@@ -110,7 +110,7 @@ const stopVote = async () => {
     clearInterval(intervalSeq);
   }
   try {
-    await axios.get(`/vote/stop`);
+    await axios.get(`/api/vote/stop`);
     isVoting.value = false;
   } catch (e) {
     console.error(e);
@@ -119,7 +119,7 @@ const stopVote = async () => {
 
 const resetVote = async () => {
   try {
-    await axios.get(`/vote/reset?pid=${props.project.pid}`);
+    await axios.get(`/api/vote/reset?pid=${props.project.pid}`);
     total.value = 0;
   } catch (e) {
     console.error(e);
@@ -129,7 +129,7 @@ const resetVote = async () => {
 const changeVote = async (seq) => {
   try {
     const deviceId = seq > 0 ? "admin-" + new Date().getTime() : "admin-pop";
-    const result = await axios.get(`/vote/submit?deviceId=${deviceId}&pid=${props.project.pid}`);
+    const result = await axios.get(`/api/vote/submit?deviceId=${deviceId}&pid=${props.project.pid}`);
     total.value = result.count;
   } catch (e) {
     console.error(e);

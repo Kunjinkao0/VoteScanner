@@ -44,12 +44,12 @@ onMounted(() => {
 })
 
 const getProjects = async () => {
-  const result = await axios.get('/project/all');
+  const result = await axios.get('/api/project/all');
   projects.value = result;
 }
 
 const getVoteResults = async () => {
-  const result = await axios.get('/vote/result');
+  const result = await axios.get('/api/vote/result');
   const combined = projects.value.map(p => {
     return { ...p, count: result.find(r => r.pid === p.pid).count }
   });

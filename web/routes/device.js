@@ -4,12 +4,12 @@ const express = require("express"),
 const { writeFile, PATH_DEVICES } = require("../utils");
 
 router.put("/:id", (req, res) => {
-  const { devices } = global;
+  const { allowedDevices } = global;
   const deviceId = req.params.id;
 
-  if (!devices.includes(deviceId)) {
-    devices.push(deviceId);
-    writeFile(PATH_DEVICES, devices);
+  if (!allowedDevices.includes(deviceId)) {
+    allowedDevices.push(deviceId);
+    writeFile(PATH_DEVICES, allowedDevices);
   }
 
   res.status(200).send("ok");

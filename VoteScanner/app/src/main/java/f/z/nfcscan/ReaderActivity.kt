@@ -78,6 +78,7 @@ class ReaderActivity : AppCompatActivity() {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG_OKHTTP, e.toString())
                 playSoundEffect(R.raw.read_invalid)
+                updateTextView("Failed\n${e.toString()}")
             }
 
             override fun onResponse(call: Call, response: Response) {
