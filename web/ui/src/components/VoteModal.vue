@@ -2,36 +2,43 @@
   <div class="mask" @click="closeModal">
     <div class="modal-wrapper" @click.stop>
       <div class="content">
-        <div class="left">
-          <div class="project-name">
-            {{ props.project.name }}
-          </div>
+        <div class="details">
+          <div class="left">
+            <div class="project-name">
+              {{ props.project.name }}
+            </div>
 
-          <div class="project-desc">
-            {{ props.project.desc }}
+            <div class="project-desc">
+              {{ props.project.desc }}
+            </div>
+
+            <div>
+              <image class="project-cover" :src="coverImg" />
+            </div>
+          </div>
+          <div class="right">
+            <div class="vote-number">
+              <span class="vote-number-frame">{{ total }}</span>
+            </div>
           </div>
         </div>
-        <div class="right">
-          <div class="vote-number">
-            <span>Total&nbsp;&nbsp;</span> <span>{{ total }}</span>
-          </div>
-          <div class="control-btns">
-            <div class="control-btns-left">
-              <button class="vote-ctrl" @click="resetVote()">
-                <img src="@/assets/reset.svg" alt="minus" width="48" height="48" />
-              </button>
-              <button class="vote-ctrl" @click="changeVote(-1)">
-                <img src="@/assets/minus.svg" alt="minus" width="48" height="48" />
-              </button>
-              <button class="vote-ctrl" @click="changeVote(1)">
-                <img src="@/assets/plus.svg" alt="plus" width="48" height="48" />
-              </button>
-            </div>
-            <button class="vote-ctrl" style="width:200px; margin-left: 12px;" @click="toggleVote()">
-              <img v-if="!isVoting" src="@/assets/forward.svg" alt="minus" width="48" height="48" />
-              <img v-if="isVoting" src="@/assets/stop.svg" alt="minus" width="48" height="48" />
+
+        <div class="control-btns">
+          <div class="control-btns-left">
+            <button class="vote-ctrl" @click="resetVote()">
+              <img src="@/assets/reset.svg" alt="minus" width="48" height="48" />
+            </button>
+            <button class="vote-ctrl" @click="changeVote(-1)">
+              <img src="@/assets/minus.svg" alt="minus" width="48" height="48" />
+            </button>
+            <button class="vote-ctrl" @click="changeVote(1)">
+              <img src="@/assets/plus.svg" alt="plus" width="48" height="48" />
             </button>
           </div>
+          <button class="vote-ctrl" style="width:400px; margin-left: 100px;" @click="toggleVote()">
+            <img v-if="!isVoting" src="@/assets/start.svg" alt="minus" width="48" height="48" />
+            <img v-if="isVoting" src="@/assets/stop.svg" alt="minus" width="48" height="48" />
+          </button>
         </div>
       </div>
 
@@ -43,7 +50,7 @@
   </div>
 </template>
 <script setup>
-import { defineEmits, defineProps, onMounted, ref, watch } from 'vue';
+import { defineEmits, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import axios from '../requestor';
 
 const props = defineProps({ project: Object, isFirst: Boolean, isLast: Boolean });
@@ -53,16 +60,20 @@ const isVoting = ref(false);
 
 const total = ref(0);
 
+const coverImg = ref(require('@/assets/logo-with-shade.png'));
+
 const closeModal = () => {
   emit('modalVisible', false);
   stopVote();
 };
 
 const prevClick = () => {
+  if (props.isFirst) return;
   emit('changeProject', -1);
   stopVote();
 }
 const nextClick = () => {
+  if (props.isLast) return;
   emit('changeProject', 1);
   stopVote();
 }
@@ -77,11 +88,26 @@ const refreshVoteCount = async () => {
 
 onMounted(() => {
   refreshVoteCount();
-})
+  window.addEventListener('keydown', handleKeyPress);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeyPress);
+});
 
 watch(() => props.project, () => {
   refreshVoteCount();
-})
+});
+
+const handleKeyPress = (event) => {
+  if (event.key === 'Escape') {
+    closeModal();
+  } else if (event.key === 'ArrowLeft') {
+    prevClick();
+  } else if (event.key === 'ArrowRight') {
+    nextClick();
+  }
+}
 
 const toggleVote = async () => {
   if (!isVoting.value) {
@@ -145,17 +171,19 @@ $border-radius: 24px;
   width: 100%;
   height: 100%;
   position: fixed;
-  background-color: rgba(0, 0, 0, 0.3);
-  // backdrop-filter: blur(10px);
-  // -webkit-backdrop-filter: blur(20px);
+  background-color: rgba(50, 50, 50, 0.8);
 }
 
 .modal-wrapper {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: $border-radius;
+  border-image-source: url('~@/assets/bg-modal.png');
+  border-image-slice: 100 fill;
+  border-image-width: 80px 120px;
+  border-image-outset: 0;
+
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.67);
-  box-shadow: 4px 4px 8px 4px #aaa;
+  box-shadow: 8px 8px 20px rgba(0, 0, 0, 0.9);
+  // box-shadow: 8px 8px 20px red; // test
+  border-radius: $border-radius;
   width: calc(100% - $padding-h * 2);
   height: calc(100% - $padding-v * 2);
   top: $padding-v;
@@ -233,56 +261,70 @@ $border-radius: 24px;
 }
 
 .content {
-  display: flex;
   margin: $border-radius $border-radius;
   width: calc(100% - $border-radius * 2);
   height: calc(100% - $border-radius * 2);
+  position: relative;
 
-  .left {
-    flex: 1;
+  .details {
+    display: flex;
     height: 100%;
-    margin-left: 120px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
 
-  .right {
-    margin-left: 20px;
-    margin-right: 120px;
-    flex: 1.5;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+    .left {
+      flex: 1;
+      height: 100%;
+      margin-left: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
 
-  .project-name {
-    font-size: 50px;
-    color: #333;
-    font-weight: 600;
-  }
+      .project-name {
+        font-size: 50px;
+        font-weight: 600;
+        color: #fff;
+      }
 
-  .project-desc {
-    margin-top: 12px;
-    font-size: 30px;
-    color: #777;
-    font-weight: 600;
-  }
+      .project-desc {
+        margin-top: 12px;
+        font-size: 30px;
+        color: #777;
+        font-weight: 600;
+      }
+    }
 
-  .vote-number {
-    font-size: 120px;
-    color: #000;
-    width: 100%;
-    height: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    .right {
+      margin-left: 20px;
+      margin-right: 120px;
+      flex: 1.5;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+
+      .vote-number {
+        font-size: 120px;
+        width: 100%;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+
+        &-frame {
+          border: 1px solid #ccc;
+          width: 200px;
+          text-align: center;
+        }
+      }
+    }
   }
 
   .control-btns {
+    position: absolute;
+    bottom: 0;
     display: flex;
     height: 100px;
     width: 100%;
@@ -300,9 +342,11 @@ $border-radius: 24px;
       border-top-right-radius: 40px;
       border-bottom-left-radius: 40px;
       border-bottom-right-radius: 40px;
-      border: none;
-      background-color: #ccc;
+      // border: none;
+      // background-color: #ccc;
       cursor: pointer;
+      background: transparent;
+      border: 4px solid #cacaca;
 
       img:hover {
         scale: 1.2;

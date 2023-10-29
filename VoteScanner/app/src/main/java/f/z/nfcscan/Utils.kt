@@ -3,7 +3,10 @@
 package f.z.nfcscan
 
 const val TAG_OKHTTP = "OKHTTP"
-const val API_HOST = "http://192.168.148.117:4399/api"
+var API_HOST = ""
+    set(value) {
+        field = "http://${value}:4399/api"
+    }
 
 fun bytesToHexString(src: ByteArray?): String {
     val stringBuilder = StringBuilder("0x")

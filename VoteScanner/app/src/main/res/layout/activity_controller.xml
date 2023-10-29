@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ControllerActivity">
 
-
     <TextView
         android:id="@+id/status"
         android:layout_width="wrap_content"
