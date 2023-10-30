@@ -43,9 +43,14 @@
       </div>
 
       <button v-if="!props.isFirst" class="btn-center btn-center-left" @click="prevClick">
+        <img src="@/assets/caret-left.svg" alt="Previous" width="48" height="48" />
       </button>
-      <button v-if="!props.isLast" class="btn-center btn-center-right" @click="nextClick" />
-      <button class="btn-close" @click="closeModal">x</button>
+      <button v-if="!props.isLast" class="btn-center btn-center-right" @click="nextClick">
+        <img src="@/assets/caret-right.svg" alt="minus" width="48" height="48" />
+      </button>
+      <button class="btn-close" @click="closeModal">
+        <img src="@/assets/close.svg" alt="Close" width="48" height="48" />
+      </button>
     </div>
   </div>
 </template>
@@ -171,7 +176,9 @@ $border-radius: 24px;
   width: 100%;
   height: 100%;
   position: fixed;
+  top: 0;
   background-color: rgba(50, 50, 50, 0.8);
+  // background-color: #fff;
 }
 
 .modal-wrapper {
@@ -191,20 +198,121 @@ $border-radius: 24px;
   right: $padding-h;
   bottom: $padding-v;
   position: fixed;
+
+  .content {
+    margin: $border-radius $border-radius;
+    width: calc(100% - $border-radius * 2);
+    height: calc(100% - $border-radius * 2);
+    position: relative;
+
+    .details {
+      display: flex;
+      height: 100%;
+
+      .left {
+        flex: 1.2;
+        height: 100%;
+        margin-left: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        .project-name {
+          font-size: 50px;
+          font-weight: 600;
+          color: #fff;
+          text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .project-desc {
+          margin-top: 12px;
+          font-size: 30px;
+          color: #777;
+          font-weight: 600;
+        }
+      }
+
+      .right {
+        margin-left: 20px;
+        margin-right: 120px;
+        flex: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        .vote-number {
+          font-size: 120px;
+          width: 100%;
+          height: 400px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
+
+          &-frame {
+            border: 1px dashed #ccc;
+            width: 320px;
+            height: 240px;
+            line-height: 240px;
+            text-align: center;
+          }
+        }
+      }
+    }
+
+    .control-btns {
+      position: absolute;
+      bottom: 0;
+      display: flex;
+      height: 100px;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+
+      &-left :not(:first-child) {
+        margin-left: 12px;
+      }
+
+      .vote-ctrl {
+        width: 80px;
+        height: 80px;
+        border-top-left-radius: 40px;
+        border-top-right-radius: 40px;
+        border-bottom-left-radius: 40px;
+        border-bottom-right-radius: 40px;
+        // border: none;
+        // background-color: #ccc;
+        cursor: pointer;
+        background: #aaa;
+        border: 4px solid #aaa;
+
+        img:hover {
+          scale: 1.2;
+        }
+      }
+    }
+  }
 }
 
 .btn-close {
   width: 100px;
   height: 100px;
   position: absolute;
-  top: -16px;
-  right: -12px;
+  top: 4px;
+  right: 4px;
   border: none;
   background-color: transparent;
   overflow: hidden;
   cursor: pointer;
-  font-size: 50px;
-  color: #777;
+
+  &:hover {
+    transition: transform 0.3s;
+    transform: scale(1.2);
+  }
 }
 
 .btn-center {
@@ -215,143 +323,19 @@ $border-radius: 24px;
   transform: translateY(-50%);
   border: none;
   background-color: transparent;
-  text-indent: -9999px;
-  overflow: hidden;
   cursor: pointer;
 
-  &::before {
-    content: "";
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 100%;
-    height: 100%;
-    display: block;
-    background-size: 100% 100%;
+  img:hover {
     transition: transform 0.3s;
-  }
-
-  &:hover::before {
     transform: scale(1.2);
   }
 
   &-left {
-    left: 4px;
-
-    &::before {
-      background-image: url("~@/assets/caret-left.svg");
-    }
+    left: 16px;
   }
 
   &-right {
-    right: 4px;
-
-    &::before {
-      background-image: url("~@/assets/caret-right.svg");
-    }
-  }
-}
-
-.btn-next {
-  width: 100px;
-  height: 100px;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  right: 12px;
-}
-
-.content {
-  margin: $border-radius $border-radius;
-  width: calc(100% - $border-radius * 2);
-  height: calc(100% - $border-radius * 2);
-  position: relative;
-
-  .details {
-    display: flex;
-    height: 100%;
-
-    .left {
-      flex: 1;
-      height: 100%;
-      margin-left: 120px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-
-      .project-name {
-        font-size: 50px;
-        font-weight: 600;
-        color: #fff;
-      }
-
-      .project-desc {
-        margin-top: 12px;
-        font-size: 30px;
-        color: #777;
-        font-weight: 600;
-      }
-    }
-
-    .right {
-      margin-left: 20px;
-      margin-right: 120px;
-      flex: 1.5;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-
-
-      .vote-number {
-        font-size: 120px;
-        width: 100%;
-        height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-
-        &-frame {
-          border: 1px solid #ccc;
-          width: 200px;
-          text-align: center;
-        }
-      }
-    }
-  }
-
-  .control-btns {
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    height: 100px;
-    width: 100%;
-    justify-content: center;
-    align-items: center;
-
-    &-left :not(:first-child) {
-      margin-left: 12px;
-    }
-
-    .vote-ctrl {
-      width: 80px;
-      height: 80px;
-      border-top-left-radius: 40px;
-      border-top-right-radius: 40px;
-      border-bottom-left-radius: 40px;
-      border-bottom-right-radius: 40px;
-      // border: none;
-      // background-color: #ccc;
-      cursor: pointer;
-      background: transparent;
-      border: 4px solid #cacaca;
-
-      img:hover {
-        scale: 1.2;
-      }
-    }
+    right: 16px;
   }
 }
 </style>

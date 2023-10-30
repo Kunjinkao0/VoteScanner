@@ -2,7 +2,7 @@
   <div class="page">
     <!-- <div class="header"></div> -->
     <div class="content">
-      <div class="projects">
+      <div class="projects-card" v-if="showCard">
         <div class="card-wrapper" v-for="(p, index) in projects">
           <div class="card" @click="openProjectDetail(p, index)">
             <div class="project-name">{{ p.name }}</div>
@@ -20,16 +20,37 @@
           </div> -->
         </div>
       </div>
+
+      <div class="project-list-wrapper" v-if="!showCard">
+        <div class="projects-list">
+          <div class="list-header">
+            <button class="list-header-button" @click="showCard = true">
+              <img src="@/assets/arrow-rotate-left.svg" width="32" height="32" />
+            </button>
+            <img class="list-header-logo" src="@/assets/logo-with-shade.png" height="150" />
+            <button class="list-header-button">
+              <img src="@/assets/file-export.svg" width="32" height="32" />
+            </button>
+          </div>
+          <div class="list-item-wrapper">
+            <transition-group name="list">
+              <div class="list-item" v-for="(p, index) in projects" :key="p.pid">
+                <span class="project-index">{{ index + 1 }}</span>
+                <span class="project-name">{{ p.name }}</span>
+                <span class="project-vote">{{ p.count }}</span>
+              </div>
+            </transition-group>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="footer">
-      <img src="@/assets/logo-with-shade.png" height="200" />
+    <div class="footer" v-if="showCard">
+      <img class="footer-logo" src="@/assets/logo-with-shade.png" height="200" @click="showCard = false" />
     </div>
 
-    <transition name="fade" mode="out-in">
-      <VoteModal v-if="detailModalVisible" @modal-visible="onModalClosed" :project="currentProject" :is-first="isFirst"
-        :is-last="isLast" @change-project="changeProject($event)" />
-    </transition>
+    <VoteModal v-if="detailModalVisible" @modal-visible="onModalClosed" :project="currentProject" :is-first="isFirst"
+      :is-last="isLast" @change-project="changeProject($event)" />
   </div>
 </template>
 
@@ -37,6 +58,8 @@
 import VoteModal from './VoteModal.vue';
 import { ref, onMounted } from "vue";
 import axios from '../requestor';
+
+const showCard = ref(true);
 
 onMounted(() => {
   getProjects();
@@ -87,7 +110,6 @@ const changeProject = (accum) => {
   currentProject.value = ps[newIdx];
 }
 </script>
-
 <style lang="scss" scoped>
 $footer-height: 100px;
 $nth: 5;
@@ -99,15 +121,19 @@ li {
   margin: 0;
 }
 
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
 .pitem {
   padding: 12px;
   font-size: 20px;
 }
 
 .page {
-  height: 100vh;
+  height: 100%;
   background: url('~@/assets/main-bg.jpeg');
-  overflow: hidden;
 }
 
 .header {
@@ -122,17 +148,17 @@ li {
 .content {
   display: flex;
   align-items: center;
-  overflow-y: auto;
   height: 100%;
-  padding-bottom: $footer-height;
-  margin-bottom: $footer-height;
+  width: 100%;
 }
 
-.projects {
+.projects-card {
   width: 100%;
   height: 100%;
   display: flex;
   flex-wrap: wrap;
+  overflow-y: auto;
+  // padding-bottom: calc($footer-height + 40px);
 
   .card-wrapper {
     width: calc(100% / $nth);
@@ -191,11 +217,104 @@ li {
   }
 }
 
+.project-list-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.projects-list {
+  color: white;
+  width: 800px;
+  text-align: center;
+  height: 100%;
+  padding-top: 40px;
+  overflow-y: auto;
+
+  .list-header {
+    height: 80px;
+    background-color: #000c25dd;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+
+    &-button {
+      background: transparent;
+      border: none;
+      transition: transform .3s;
+
+      &:hover {
+        transform: scale(1.2);
+
+        // img {
+        //   filter: drop-shadow(1000px 0 0 red);
+        //   transform: translate(-1000px);
+        // }
+      }
+    }
+
+    &-logo {
+      margin-top: -16px;
+    }
+  }
+
+  .list-item-wrapper {
+    height: calc(100% - 144px);
+    overflow-y: auto;
+    z-index: 1;
+    padding-top: 24px;
+
+    .list-item {
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6);
+      background-color: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      // height: 40px;
+      margin: 8px 40px;
+      padding: 12px 20px;
+      color: #FFF;
+      font-size: 24px;
+      text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+
+      // &:not(:first-child) {
+      //   border-top: 1px solid #ccc;
+      // }
+
+      // &:nth-of-type(1) {
+      //   margin-left: 16px;
+      //   margin-right: 16px;
+      // }
+    }
+
+    .project-index {
+      font-size: 20px;
+      flex: 0 0 80px;
+      text-align: left;
+      color: #CCC;
+    }
+
+    .project-name {
+      flex: 1;
+      text-align: left;
+    }
+
+    .project-vote {
+      flex: 0 0 20px;
+    }
+  }
+}
+
 .footer {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background-color: #000c25cc;
+  background-color: #000c25ee;
   height: $footer-height;
   color: #eaeaea;
   font-weight: 600;
@@ -204,51 +323,36 @@ li {
   justify-content: center;
   align-items: center;
 
-  .control-btn {
-    width: 200px;
-    height: 80px;
+  &-logo {
+    cursor: pointer;
   }
 }
 
-.current {
-  display: flex;
-  padding: 20px;
-  width: 100%;
-  height: 100%;
-
-  &-proj {
-    display: 1;
-    font-size: 60px;
-    display: flex;
-    width: 0;
-    flex: 0.4;
-    height: 100%;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &-count {
-    display: 1;
-    width: 0;
-    flex: 0.6;
-    font-size: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-
-.fade-enter,
-.fade-leave-to
-
-/* .fade-leave-active in <2.1.8 */
-  {
+// ------ animations ------
+.list-enter-from {
   opacity: 0;
+  transform: translateY(30px);
+}
+
+.list-enter-active {
+  transition: 1s all ease;
+}
+
+.list-enter-to {
+  opacity: 1;
+}
+
+.list-leave-from {
+  opacity: 1;
+}
+
+.list-leave-active {
+  transition: 1s all ease;
+  position: absolute;
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
 }
 </style>
