@@ -3,6 +3,7 @@ package f.z.nfcscan
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.nfc.NfcAdapter
 import android.nfc.Tag
@@ -25,13 +26,25 @@ class MainActivity : AppCompatActivity() {
     private var nfcAdapter: NfcAdapter? = null
 
     private lateinit var tagInfoTextView: TextView
+
+    private var nfcTestMode = false;
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
-
         tagInfoTextView = findViewById<TextView>(R.id.result)
+
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_NFC)) {
+            updateTextView("Current device doesn't support NFC.")
+            return
+        }
+
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter?.isEnabled == false) {
+            updateTextView("NFC is not enabled on your device, please turn on the NFC first.")
+            return
+        }
 
         nfcPendingIntent = PendingIntent.getActivity(
             this,
@@ -39,16 +52,23 @@ class MainActivity : AppCompatActivity() {
             Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_MUTABLE
         )
-
-        val sharedPreferences: SharedPreferences =
-            PreferenceManager.getDefaultSharedPreferences(this)
-        val apiHost = sharedPreferences.getString("api_host", getString(R.string.default_host))!!
-        API_HOST = apiHost
     }
 
     override fun onResume() {
         super.onResume()
+        checkHostFromPref()
         nfcAdapter?.enableForegroundDispatch(this, nfcPendingIntent, null, null)
+    }
+
+    private fun checkHostFromPref() {
+        val sharedPreferences: SharedPreferences =
+            PreferenceManager.getDefaultSharedPreferences(this)
+        val apiHost = sharedPreferences.getString("api_host", getString(R.string.default_host))!!
+        nfcTestMode = apiHost == "192.168.1.1" || apiHost == "1"
+        API_HOST = apiHost
+
+        // nfcTestMode ? "" : "" is not working here, strange kotlin
+        findViewById<TextView>(R.id.ip).text = (if (nfcTestMode) "NFC test" else apiHost)
     }
 
     override fun onPause() {
@@ -67,12 +87,10 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
-
 //            R.id.action_control -> {
 //                startActivity(Intent(this, ControllerActivity::class.java))
 //                true
 //            }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -82,8 +100,12 @@ class MainActivity : AppCompatActivity() {
         if (NfcAdapter.ACTION_TAG_DISCOVERED == intent.action) {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             val deviceId = bytesToHexString(tag?.id)
-            tagInfoTextView.text = "Voting..."
-            voteCall(deviceId)
+
+            if (nfcTestMode) {
+                updateTextView("DeviceId: ${deviceId}")
+            } else {
+                voteCall(deviceId)
+            }
         }
     }
 
@@ -100,6 +122,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun voteCall(deviceId: String) {
+        updateTextView("Submitting...")
         val url = "${API_HOST}/vote/submit?deviceId=${deviceId}"
         val client = OkHttpClient()
         val request = Request.Builder().url(url).get().build()
