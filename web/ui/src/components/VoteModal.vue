@@ -4,14 +4,12 @@
       <div class="content">
         <div class="details">
           <div class="left">
-            <div class="project-name">
-              {{ props.project.name }}
-            </div>
-
             <div class="project-desc">
               {{ props.project.desc }}
             </div>
-
+            <div class="project-name">
+              {{ props.project.name }}
+            </div>
             <div>
               <image class="project-cover" :src="coverImg" />
             </div>
@@ -26,18 +24,18 @@
         <div class="control-btns">
           <div class="control-btns-left">
             <button class="vote-ctrl" @click="resetVote()">
-              <img src="@/assets/reset.svg" alt="minus" width="48" height="48" />
+              <img src="@/assets/reset.svg" alt="Vote reset" width="48" height="48" />
             </button>
             <button class="vote-ctrl" @click="changeVote(-1)">
-              <img src="@/assets/minus.svg" alt="minus" width="48" height="48" />
+              <img src="@/assets/minus.svg" alt="Vote down" width="48" height="48" />
             </button>
             <button class="vote-ctrl" @click="changeVote(1)">
-              <img src="@/assets/plus.svg" alt="plus" width="48" height="48" />
+              <img src="@/assets/plus.svg" alt="Vote up" width="48" height="48" />
             </button>
           </div>
           <button class="vote-ctrl" style="width:400px; margin-left: 100px;" @click="toggleVote()">
-            <img v-if="!isVoting" src="@/assets/start.svg" alt="minus" width="48" height="48" />
-            <img v-if="isVoting" src="@/assets/stop.svg" alt="minus" width="48" height="48" />
+            <img v-if="!isVoting" src="@/assets/start.svg" alt="Vote start" width="48" height="48" />
+            <img v-if="isVoting" src="@/assets/stop.svg" alt="Vote stop" width="48" height="48" />
           </button>
         </div>
       </div>
@@ -46,7 +44,7 @@
         <img src="@/assets/caret-left.svg" alt="Previous" width="48" height="48" />
       </button>
       <button v-if="!props.isLast" class="btn-center btn-center-right" @click="nextClick">
-        <img src="@/assets/caret-right.svg" alt="minus" width="48" height="48" />
+        <img src="@/assets/caret-right.svg" alt="Next" width="48" height="48" />
       </button>
       <button class="btn-close" @click="closeModal">
         <img src="@/assets/close.svg" alt="Close" width="48" height="48" />
@@ -84,11 +82,8 @@ const nextClick = () => {
 }
 
 const refreshVoteTotal = async () => {
-  try {
-    const result = await axios.get(`/api/vote/project/${props.project.id}/total`);
-    total.value = result.total;
-  } catch (e) {
-  }
+  const result = await axios.get(`/api/vote/project/${props.project.id}/total`);
+  total.value = result.total;
 }
 
 onMounted(() => {
@@ -225,12 +220,13 @@ $border-radius: 24px;
           font-weight: 600;
           color: #fff;
           text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
+          margin-bottom: 40px;
         }
 
         .project-desc {
-          margin-top: 12px;
           font-size: 30px;
-          color: #777;
+          color: #eee;
+          text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
           font-weight: 600;
         }
       }
@@ -286,15 +282,13 @@ $border-radius: 24px;
         border-top-right-radius: 40px;
         border-bottom-left-radius: 40px;
         border-bottom-right-radius: 40px;
-        // border: none;
-        // background-color: #ccc;
         cursor: pointer;
         background: #777;
         border: none;
 
         &:hover {
-          transition: transform .3s ease, box-shadow .3s ease;
-          box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.5);
+          transition: transform 0.2s ease;
+          box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.5);
           transform: translateY(-4px);
         }
       }
@@ -314,7 +308,7 @@ $border-radius: 24px;
   cursor: pointer;
 
   img:hover {
-    transition: transform 0.3s ease, box-shadow .3s ease;
+    transition: transform 0.2s ease;
     filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
     transform: translateY(-4px);
   }
@@ -331,7 +325,7 @@ $border-radius: 24px;
   cursor: pointer;
 
   img:hover {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s ease;
     filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
     transform: translateY(-4px);
   }

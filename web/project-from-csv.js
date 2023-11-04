@@ -1,4 +1,6 @@
 const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
+const { dbRun } = require("./db");
 
 function parseCSV(filePath) {
   const fileContent = fs.readFileSync(filePath, "utf-8");
@@ -32,4 +34,10 @@ if (args.length !== 1) {
 const filePath = args[0];
 
 const parsedData = parseCSV(filePath);
-console.log(parsedData);
+
+parsedData.forEach(async (p) => {
+  const pid = uuidv4();
+  const sql = "INSERT INTO project (id, name, desc, cover) VALUES (?, ?, ?, ?)";
+  await dbRun(sql, [pid, p.name, p.team, null]);
+  console.log(`Inserted: [${p.name}]-[${p.team}]`);
+});

@@ -1,5 +1,6 @@
-const bodyParser = require("body-parser");
+const path = require("path");
 const express = require("express");
+const bodyParser = require("body-parser");
 const deviceRoute = require("./routes/device");
 const projectRoute = require("./routes/project");
 const voteRoute = require("./routes/vote");
@@ -8,12 +9,18 @@ const { dbAll } = require("./db.js");
 const app = express();
 const port = 4399;
 
-app.use("/public", express.static("public"));
+// app.use("/public", express.static("public"));
 app.use(bodyParser.json());
 
 app.use("/api/devices", deviceRoute);
 app.use("/api/projects", projectRoute);
 app.use("/api/vote", voteRoute);
+
+const publicFolder = path.join(__dirname, "public");
+app.use(express.static(publicFolder));
+app.get("/", (_, res) => {
+  res.sendFile(path.join(publicFolder, "index.html"));
+});
 
 app.listen(port, async () => {
   console.log(`Vote app starts at ${port}`);

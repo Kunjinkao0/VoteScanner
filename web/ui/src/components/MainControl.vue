@@ -3,15 +3,16 @@
     <!-- <div class="header"></div> -->
     <div class="content">
       <div class="projects-card" v-if="showCard">
-        <div class="card-wrapper" v-for="(p, index) in projects">
+        <div class="card-wrapper" v-for="(p, index) in projects" :key="p.id">
           <div class="card" @click="openProjectDetail(p, index)">
             <div class="project-name">{{ p.name }}</div>
             <div class="project-vote">{{ p.total }}</div>
+            <div class="project-desc">{{ p.desc }}</div>
           </div>
         </div>
       </div>
 
-      <div class="project-list-wrapper" v-if="!showCard">
+      <div class="project-list-wrapper noselect" v-if="!showCard">
         <div class="projects-list">
           <div class="list-header">
             <button class="list-header-button" @click="showCard = true">
@@ -77,7 +78,8 @@ const getVoteResults = async () => {
 }
 
 const sortedProjects = computed(() => {
-  return projects.value.sort((a, b) => b.total - a.total);
+  const cloned = [...projects.value];
+  return cloned.sort((a, b) => b.total - a.total);
 })
 
 const onModalClosed = () => {
@@ -190,15 +192,10 @@ li {
     }
 
     .card {
-      padding: 20px;
+      padding: 20px 20px 20px 20px;
       margin: 20px;
       min-height: 300px;
       cursor: pointer;
-      // background-color: #eaeaea;
-      // border-radius: 20px;
-      // border: 0.5px solid rgba(200, 200, 200, 0.3);
-      // box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.2);
-      // transition: box-shadow .3s;
       display: flex;
       flex-direction: column;
       background: url('~@/assets/bg-card.png');
@@ -207,7 +204,7 @@ li {
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
       border-radius: 25px;
-      transition: transform .2s ease, box-shadow .2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
 
       &:hover {
         box-shadow: 4px 8px 10px rgba(0, 0, 0, 0.7);
@@ -216,9 +213,19 @@ li {
     }
   }
 
+  .project-desc {
+    font-weight: 600;
+    text-align: center;
+    color: #eee;
+    font-size: 12px;
+    text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+  }
+
   .project-name {
     font-weight: 600;
     text-align: center;
+    font-size: 16px;
+    margin: 0 20px;
     color: #fff;
     text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
   }
@@ -268,7 +275,7 @@ li {
       cursor: pointer;
 
       &:hover {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
         transform: translateY(-4px);
 
@@ -304,7 +311,7 @@ li {
       align-items: center;
 
       &:hover {
-        transition: transform .3s ease, box-shadow .3s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.5);
         transform: translateX(-4px);
       }
@@ -355,7 +362,7 @@ li {
     margin-bottom: 6px;
 
     &:hover {
-      transition: transform 0.3s ease;
+      transition: transform 0.2s ease;
       // filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
       transform: translateY(-8px);
     }
