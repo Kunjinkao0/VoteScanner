@@ -1,38 +1,38 @@
 const bodyParser = require("body-parser");
 const express = require("express");
-const {
-  readFileObject,
-  PATH_DEVICES,
-  PATH_PROJECTS,
-  PATH_VOTE_RESULTS,
-} = require("./utils");
 const deviceRoute = require("./routes/device");
 const projectRoute = require("./routes/project");
 const voteRoute = require("./routes/vote");
-require("dotenv").config();
+const { dbAll } = require("./db.js");
 
 const app = express();
 const port = 4399;
 
 app.use("/public", express.static("public"));
-
 app.use(bodyParser.json());
-app.use("/api/device", deviceRoute);
-app.use("/api/project", projectRoute);
+
+app.use("/api/devices", deviceRoute);
+app.use("/api/projects", projectRoute);
 app.use("/api/vote", voteRoute);
 
-app.listen(port, () => {
-  initApp();
+app.listen(port, async () => {
   console.log(`Vote app starts at ${port}`);
+  await initApp();
 });
 
-function initApp() {
+async function initApp() {
   global.votingPid = null; // current voting pid
-  global.allowedDevices = readFileObject(PATH_DEVICES);
-  global.projects = readFileObject(PATH_PROJECTS);
-  global.voteResults = readFileObject(PATH_VOTE_RESULTS);
 
-  console.log("Devices: ", global.allowedDevices);
-  console.log("Projects: ", global.projects);
-  console.log("VoteResults: ", global.voteResults);
+  try {
+    const trustedDevices = await dbAll("SELECT * FROM trusted_device");
+    const projects = await dbAll("SELECT * FROM project");
+    console.log("Trusted Devices in total: ", trustedDevices.length);
+    console.log("Saved Projects in total:  ", projects.length);
+  } catch (e) {
+    console.error(e);
+  }
+  // console.log("Projects: ", rows);
+
+  // console.log("Devices: ", global.allowedDevices);
+  // console.log("VoteResults: ", global.voteResults);
 }

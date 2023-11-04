@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.media.MediaPlayer
 import android.nfc.NfcAdapter
 import android.nfc.Tag
@@ -12,28 +14,36 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.TextView
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import org.json.JSONObject
 import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        const val MODE_NFC_TEST = "0"
+        const val MODE_DEVICE_REGISTER = "1"
+        const val MODE_VOTE_READER = "2"
+    }
+
     private var nfcPendingIntent: PendingIntent? = null
     private var nfcAdapter: NfcAdapter? = null
 
     private lateinit var tagInfoTextView: TextView
 
-    private var nfcTestMode = false;
+    private var readerMode = MODE_VOTE_READER;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tagInfoTextView = findViewById<TextView>(R.id.result)
+        tagInfoTextView = findViewById(R.id.result)
 
         if (!packageManager.hasSystemFeature(PackageManager.FEATURE_NFC)) {
             updateTextView("Current device doesn't support NFC.")
@@ -57,23 +67,35 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkHostFromPref()
-        nfcAdapter?.enableForegroundDispatch(this, nfcPendingIntent, null, null)
+        toggleNfc(true)
     }
 
     private fun checkHostFromPref() {
         val sharedPreferences: SharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(this)
-        val apiHost = sharedPreferences.getString("api_host", getString(R.string.default_host))!!
-        nfcTestMode = apiHost == "192.168.1.1" || apiHost == "1"
-        API_HOST = apiHost
-
-        // nfcTestMode ? "" : "" is not working here, strange kotlin
-        findViewById<TextView>(R.id.ip).text = (if (nfcTestMode) "NFC test" else apiHost)
+        API_HOST = sharedPreferences.getString("api_host", getString(R.string.default_host))!!
+        val mode = sharedPreferences.getString("read_mode", "2")!!
+        if (!mode.equals(readerMode)) {
+            updateTextView(getString(R.string.default_read_text))
+            readerMode = mode;
+        }
+        val optionValues = resources.getStringArray(R.array.option_values)
+        val selectedIndex = optionValues.indexOf(readerMode)
+        val optionLabels = resources.getStringArray(R.array.option_labels)
+        findViewById<TextView>(R.id.mode).text = optionLabels[selectedIndex]
     }
 
     override fun onPause() {
         super.onPause()
-        nfcAdapter?.disableForegroundDispatch(this)
+        toggleNfc(false)
+    }
+
+    private fun toggleNfc(on: Boolean) {
+        if (on) {
+            nfcAdapter?.enableForegroundDispatch(this, nfcPendingIntent, null, null)
+        } else {
+            nfcAdapter?.disableForegroundDispatch(this)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -101,17 +123,26 @@ class MainActivity : AppCompatActivity() {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             val deviceId = bytesToHexString(tag?.id)
 
-            if (nfcTestMode) {
+            if (readerMode == MODE_NFC_TEST) {
                 updateTextView("DeviceId: ${deviceId}")
-            } else {
-                voteCall(deviceId)
+            } else if (readerMode == MODE_DEVICE_REGISTER) {
+                deviceRegSubmit(deviceId)
+            } else if (readerMode == MODE_VOTE_READER) {
+                voteSubmit(deviceId)
             }
         }
     }
 
-    private fun updateTextView(result: String) {
+    private fun updateTextView(result: String, success: Int = 0) {
         runOnUiThread {
             tagInfoTextView.text = result
+            if (success > 0) {
+                tagInfoTextView.setTextColor(getColor(R.color.success))
+            } else if (success < 0) {
+                tagInfoTextView.setTextColor(getColor(R.color.failure))
+            } else {
+                tagInfoTextView.setTextColor(Color.WHITE)
+            }
         }
     }
 
@@ -121,29 +152,64 @@ class MainActivity : AppCompatActivity() {
         mediaPlayer.setOnCompletionListener { mediaPlayer.release() }
     }
 
-    private fun voteCall(deviceId: String) {
+    private fun voteSubmit(deviceId: String) {
         updateTextView("Submitting...")
-        val url = "${API_HOST}/vote/submit?deviceId=${deviceId}"
-        val client = OkHttpClient()
-        val request = Request.Builder().url(url).get().build()
-        client.newCall(request).enqueue(object : Callback {
+        val url = "${API_HOST}/vote/submit"
+        val jsonData = JSONObject()
+        jsonData.put("deviceId", deviceId)
+        val request = Request.Builder().url(url).post(toJsonBody(jsonData)).build()
+
+        okClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG_OKHTTP, e.toString())
-                playSoundEffect(R.raw.read_invalid)
-                updateTextView("Failed\n${e.toString()}")
+                playSoundEffect(R.raw.failure)
+                updateTextView(e.toString(), -1)
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val data = response.body!!.string()
                 if (response.isSuccessful) {
                     Log.v(TAG_OKHTTP, data)
-                    updateTextView("Succeed\n${deviceId}")
-                    playSoundEffect(R.raw.read_success)
+                    val jsonObject = JSONObject(data)
+                    val total = jsonObject.getString("total")
+                    updateTextView("Total: $total", 1)
+                    playSoundEffect(R.raw.success)
                 } else {
                     Log.e(TAG_OKHTTP, "ERROR in ${url}: ${response.message}")
                     Log.e(TAG_OKHTTP, data)
-                    updateTextView("Failed\n${data}")
-                    playSoundEffect(R.raw.read_invalid)
+
+                    updateTextView(data, -1)
+                    playSoundEffect(R.raw.failure)
+                }
+            }
+        })
+    }
+
+    private fun deviceRegSubmit(deviceId: String) {
+        updateTextView("Submitting...")
+        val url = "${API_HOST}/devices"
+        val jsonData = JSONObject()
+        jsonData.put("deviceId", deviceId)
+        val request = Request.Builder().url(url).put(toJsonBody(jsonData)).build()
+
+        okClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG_OKHTTP, e.toString())
+                playSoundEffect(R.raw.failure)
+                updateTextView(e.toString(), -1)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val data = response.body!!.string()
+                if (response.isSuccessful) {
+                    Log.v(TAG_OKHTTP, data)
+                    updateTextView("Registered", 1)
+                    playSoundEffect(R.raw.success)
+                } else {
+                    Log.e(TAG_OKHTTP, "ERROR in ${url}: ${response.message}")
+                    Log.e(TAG_OKHTTP, data)
+                    updateTextView(data, -1)
+                    playSoundEffect(R.raw.failure)
                 }
             }
         })

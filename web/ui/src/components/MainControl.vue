@@ -6,18 +6,8 @@
         <div class="card-wrapper" v-for="(p, index) in projects">
           <div class="card" @click="openProjectDetail(p, index)">
             <div class="project-name">{{ p.name }}</div>
-            <div class="project-vote">{{ p.count }}</div>
+            <div class="project-vote">{{ p.total }}</div>
           </div>
-          <!-- <div v-if="p.count > 0" class="card-badge">
-            <img v-if="index === 0" :src="require('@/assets/gold-medal.png')" width="72" height="72"
-              style="margin-top: -4px;">
-            <img v-if="index === 1" :src="require('@/assets/silver-medal.png')" width="60" height="60"
-              style="margin-top: -4px; margin-right: 4px;">
-            <img v-if="index === 2" :src="require('@/assets/bronze-medal.png')" width="48" height="48"
-              style="margin-top: -4px;">
-            <img v-if="index >= 3 && index <= 9" :src="require('@/assets/winner.png')" width="40" height="40"
-              style="margin-top: 2px;">
-          </div> -->
         </div>
       </div>
 
@@ -28,16 +18,16 @@
               <img src="@/assets/arrow-rotate-left.svg" width="32" height="32" />
             </button>
             <img class="list-header-logo" src="@/assets/logo-with-shade.png" height="150" />
-            <button class="list-header-button">
-              <img src="@/assets/file-export.svg" width="32" height="32" />
+            <button class="list-header-button" @click="exportData">
+              <img src="@/assets/file-arrow-down.svg" width="32" height="32" />
             </button>
           </div>
           <div class="list-item-wrapper">
             <transition-group name="list">
-              <div class="list-item" v-for="(p, index) in projects" :key="p.pid">
+              <div class="list-item" v-for="(p, index) in sortedProjects" :key="p.id">
                 <span class="project-index">{{ index + 1 }}</span>
                 <span class="project-name">{{ p.name }}</span>
-                <span class="project-vote">{{ p.count }}</span>
+                <span class="project-vote">{{ p.total }}</span>
               </div>
             </transition-group>
           </div>
@@ -46,7 +36,7 @@
     </div>
 
     <div class="footer" v-if="showCard">
-      <img class="footer-logo" src="@/assets/logo-with-shade.png" height="200" @click="showCard = false" />
+      <img class="footer-logo" src="@/assets/logo-with-shade.png" height="180" @click="showCard = false" />
     </div>
 
     <VoteModal v-if="detailModalVisible" @modal-visible="onModalClosed" :project="currentProject" :is-first="isFirst"
@@ -56,7 +46,7 @@
 
 <script setup>
 import VoteModal from './VoteModal.vue';
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import axios from '../requestor';
 
 const showCard = ref(true);
@@ -64,22 +54,31 @@ const showCard = ref(true);
 onMounted(() => {
   getProjects();
   getVoteResults();
+
+  // inner vote modal will use space to toggle vote, disable this
+  window.addEventListener('keydown', function (e) {
+    if (e.keyCode == 32 && e.target == document.body) {
+      e.preventDefault();
+    }
+  });
 })
 
 const getProjects = async () => {
-  const result = await axios.get('/api/project/all');
+  const result = await axios.get('/api/projects');
   projects.value = result;
 }
 
 const getVoteResults = async () => {
-  const result = await axios.get('/api/vote/result');
+  const result = await axios.get('/api/vote/results');
   const combined = projects.value.map(p => {
-    return { ...p, count: result.find(r => r.pid === p.pid).count }
+    return { ...p, total: result.find(r => r.projectId === p.id)?.total || 0 }
   });
-  const sorted = combined.filter(p => p.count > 0).sort((a, b) => b.count - a.count);
-  const unvoted = combined.filter(p => p.count == 0);
-  projects.value = [...sorted, ...unvoted];
+  projects.value = combined;
 }
+
+const sortedProjects = computed(() => {
+  return projects.value.sort((a, b) => b.total - a.total);
+})
 
 const onModalClosed = () => {
   detailModalVisible.value = false;
@@ -109,9 +108,28 @@ const changeProject = (accum) => {
   isLast.value = newIdx === ps.length - 1;
   currentProject.value = ps[newIdx];
 }
+
+const exportData = () => {
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Project Name,Score\r\n";
+
+  sortedProjects.value.forEach((p) => {
+    const rowData = [p.name, p.total];
+    csvContent += rowData.map(d => `${d}`).join(',') + '\r\n';
+  });
+
+  const encodedURI = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedURI);
+  link.setAttribute('download', 'data.csv');
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+}
 </script>
 <style lang="scss" scoped>
-$footer-height: 100px;
+$footer-height: 80px;
 $nth: 5;
 
 ul,
@@ -154,10 +172,11 @@ li {
 
 .projects-card {
   width: 100%;
-  height: 100%;
+  height: calc(100% - 72px);
   display: flex;
   flex-wrap: wrap;
   overflow-y: auto;
+  padding-bottom: 72px;
   // padding-bottom: calc($footer-height + 40px);
 
   .card-wrapper {
@@ -246,10 +265,12 @@ li {
     &-button {
       background: transparent;
       border: none;
-      transition: transform .3s;
+      cursor: pointer;
 
       &:hover {
-        transform: scale(1.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
+        transform: translateY(-4px);
 
         // img {
         //   filter: drop-shadow(1000px 0 0 red);
@@ -281,6 +302,12 @@ li {
       text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
       display: flex;
       align-items: center;
+
+      &:hover {
+        transition: transform .3s ease, box-shadow .3s ease;
+        box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.5);
+        transform: translateX(-4px);
+      }
 
       // &:not(:first-child) {
       //   border-top: 1px solid #ccc;
@@ -314,7 +341,7 @@ li {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background-color: #000c25ee;
+  background-color: #000c25dd;
   height: $footer-height;
   color: #eaeaea;
   font-weight: 600;
@@ -325,6 +352,13 @@ li {
 
   &-logo {
     cursor: pointer;
+    margin-bottom: 6px;
+
+    &:hover {
+      transition: transform 0.3s ease;
+      // filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
+      transform: translateY(-8px);
+    }
   }
 }
 

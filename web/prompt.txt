@@ -1,0 +1,34 @@
+node.js + express server + sqlite:
+I need to create an express server, including 4 of the db tables in sqlite, user can setup projects, and can vote for each project. Each record of vote will be saved into vote_record and create vote relatioship row. But vote system is not always able to vote, we also needs a currentPid to indicate which project is voting.
+DB schemas here:
+- project: id=UUID, name=TEXT, desc=TEXT, cover=TEXT
+- vote_record: id=UUID, time=date, device_id=TEXT, score=INT
+- project_vote_relationship: pid=foreign key of project id, vid=foreign key of vote_record id
+- trusted_device: id=TEXT
+For db files:
+- create a "_init.js" for initializing database, it's a standalone file for DB reset, not for express db connection
+- create a "db.js" file to create db connection and usages, will be used in routers, expose promisified function to query and modify data
+
+app.js is for entrance js file, port=4399, following below rules:
+  1. should contains json parser and all following routers, all routers should start with "/api"
+  2. should print all of the "device" and "project" in app start callback function
+App should integrated with express router with 3 files, all api should firstly considered to be restful; routers should be placed in router folder.
+- project.js: including all the prjects CRUD
+  - note: as sqlite doesn't supports UUID type, when a new project created, you should call a lib with uuid() to generate uuid
+- device.js: including all the devices CRUD
+- vote.js:
+  - POST "/start": 1 parameter "pid", save it in "app.global.currentPid"
+  - POST "/stop": 1 parameter "pid", set "app.global.currentPid" to null
+  - POST "/vote": 2 parameters from body, deviceId and projectId, logic:
+    1. need to check if deviceId is in "device" table, if not returns 400 - not trusted device
+      - note: 1 exception here is if "deviceId" starts with "admin" ignore it
+    2. set a variable `const currentPid="projectId || app.global.currentPid"`
+      - check in "project" table, if not returns 400 - start a vote first
+    3. insert a new row to record and relationship, to save this record and which project it belongs to, score by default is 1, but when deviceId="admin-pop", it should be -2
+      -note: using uuid to create id in vote_record
+  - GET "/vote-count": "projectId" is a partial parameter
+    1. If "projectId" is empty, get all "name" from "project" table, if not return a 1 item array
+    2. Get all of the rows are there in relationship table, and summarize each record's score column, and give a total count
+    3. Combine project(s) with [{"name": project_name, count: total_count}]
+
+NOTE: **YOU NEED TO GIVE ME ALL OF THE CODE DETAILS**

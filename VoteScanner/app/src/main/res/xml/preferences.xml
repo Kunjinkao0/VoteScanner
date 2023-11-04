@@ -10,4 +10,12 @@
         android:summary="Enter the remote API host"
         android:title="API Host" />
 
+    <ListPreference
+        android:defaultValue="2"
+        android:entries="@array/option_labels"
+        android:entryValues="@array/option_values"
+        android:icon="@drawable/mode"
+        android:key="read_mode"
+        android:summary="Choose to setup how reader works"
+        android:title="Reader app mode" />
 </PreferenceScreen>

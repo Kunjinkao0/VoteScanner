@@ -2,7 +2,7 @@ const express = require("express"),
   router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 
-const { writeFile, PATH_PROJECTS, PATH_VOTE_RESULTS } = require("../utils");
+const { dbRun, dbAll } = require("../db.js");
 
 const RANDOM_NAME = [
   "Investment Revolutionizer",
@@ -27,48 +27,51 @@ const RANDOM_NAME = [
   "The Path to Wealth: Innovate Your Investments",
 ];
 
-router.get("/add", (req, res) => {
-  const p = req.params;
-  if (!p.name) {
-    p.name = RANDOM_NAME[Math.floor(Math.random() * RANDOM_NAME.length)];
+router.put("/", async (req, res) => {
+  let { name, desc, cover } = req.body;
+  if (!name) {
+    name = RANDOM_NAME[Math.floor(Math.random() * RANDOM_NAME.length)];
   }
-  const pid = uuidv4();
-  global.projects.push({ pid, ...p });
-  writeFile(PATH_PROJECTS, global.projects);
-
-  global.voteResults.push({ pid, votes: [] });
-  writeFile(PATH_VOTE_RESULTS, global.voteResults);
-
-  res.status(200).send("ok");
+  try {
+    const pid = uuidv4();
+    const sql =
+      "INSERT INTO project (id, name, desc, cover) VALUES (?, ?, ?, ?)";
+    await dbRun(sql, [pid, name, desc, cover]);
+    res.status(200).json({ id: pid });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
 });
 
-router.get("/del", (req, res) => {
+router.delete("/:pid", async (req, res) => {
   const { pid } = req.params;
   if (!pid) {
     res.status(400).send("No project found.");
     return;
   }
-  global.projects.push({ pid, ...p });
-  writeFile(PATH_PROJECTS, global.projects);
 
-  global.voteResults.push({ pid, votes: [] });
-  writeFile(PATH_VOTE_RESULTS, global.voteResults);
+  try {
+    const sql = "DELETE FROM project WHERE id = ?";
 
-  res.status(200).send("ok");
-});
-
-router.get("/detail/:pid", (req, res) => {
-  const proj = global.projects.find((p) => p.pid === req.params.pid);
-  if (!proj) {
-    res.status(400).send("No project found.");
-    return;
+    await dbRun(sql, [pid]);
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
   }
-
-  res.status(200).json(proj);
 });
 
-router.get("/all", (_, res) => {
-  res.status(200).json(global.projects);
+router.get("/", async (_, res) => {
+  try {
+    const sql = "SELECT * FROM project";
+
+    const result = await dbAll(sql);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
 });
 
 module.exports = router;

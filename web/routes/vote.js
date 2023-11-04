@@ -1,104 +1,176 @@
 const express = require("express"),
   router = express.Router();
+const { v4: uuidv4 } = require("uuid");
+const {
+  USE_TRUSTED_DEVICES,
+  VOTE_SCORE,
+  VOTE_ADMIN_UP_SCORE,
+  VOTE_ADMIN_DOWN_SCORE,
+} = require("../config");
+const { dbGet, dbRun, dbAll } = require("../db");
 
-const { writeFile, PATH_VOTE_RESULTS } = require("../utils");
+async function getScoreOfProject(pid) {
+  const summarySql = `
+      SELECT SUM(vr.score) AS total
+      FROM vote_record vr
+      JOIN project_vote_relationship pvr ON vr.id = pvr.vote_id
+      WHERE pvr.project_id = ?;
+    `;
+  const _result = await dbAll(summarySql, [pid]);
+  const result = _result[0];
+  if (result.total === null || result.total < 0) result.total = 0;
+  return result;
+}
 
-router.get("/start", (req, res) => {
-  if (global.projects.length === 0) {
-    res.status(500).send(`No projects found`);
+router.post("/start", async (req, res) => {
+  const { pid } = req.body;
+  const sql = "SELECT * FROM project WHERE id = ?";
+  const project = await dbGet(sql, [pid]);
+  if (!project) {
+    res.status(400).send("Invalid project Id");
     return;
   }
 
-  const targetPid = req.query.pid;
-  const proj = global.projects.find((p) => p.pid === targetPid);
-  if (!proj) {
-    res.status(400).send("No project found.");
-    return;
-  }
-
-  global.votingPid = targetPid;
-  res.status(200).json(proj);
-});
-
-router.get("/stop", (_, res) => {
-  global.votingPid = null;
-  res.status(200).send("");
-});
-
-router.get("/submit", (req, res) => {
-  const { deviceId, pid } = req.query;
-  if (!deviceId) {
-    res.status(400).send(`Invalid deviceId.`);
-    return;
-  }
-  const { votingPid, projects, voteResults, allowedDevices } = global;
-  const currentPid = pid || votingPid;
-  if (!currentPid) {
-    res.status(500).send(`Vote not started yet.`);
-    return;
-  }
-  const result = voteResults.find(({ pid }) => pid === currentPid);
-  const proj = projects.find((p) => p.pid === currentPid);
-
-  // if (process.env.LIMITED_DEVICES && !deviceId.startWith("admin")) {
-  //   if (!allowedDevices.includes(deviceId)) {
-  //     res.status(500).send(`This device is not a valid one to vote.`);
-  //     return;
-  //   }
-  // }
-
-  if (deviceId === "admin-pop") {
-    if (result.votes.length > 0) {
-      result.votes.pop();
-      console.log(`Pop [${proj.name}] from [admin-pop]:`);
-      console.log("Current vote:");
-      console.log(result.votes);
-    }
-    res.status(200).send({ count: result.votes.length });
-    return;
-  }
-
-  if (result.votes.includes(deviceId)) {
-    res.status(200).send("This device already voted.");
-    return;
-  }
-
-  result.votes.push(deviceId);
-  console.log(`Vote [${proj.name}] from device [${deviceId}]:`);
-  console.log("Current vote:");
-  console.log(result.votes);
-  writeFile(PATH_VOTE_RESULTS, voteResults);
-  res.status(200).send({ count: result.votes.length });
-});
-
-router.get("/reset", (req, res) => {
-  const { pid } = req.query;
-  const { projects, voteResults } = global;
-  const result = voteResults.find((v) => v.pid === pid);
-  const proj = projects.find((p) => p.pid === pid);
-  result.votes = [];
-
-  console.log(`Reset [${proj.name}]'s vote, now:`);
-  console.log(result);
-  writeFile(PATH_VOTE_RESULTS, voteResults);
+  global.votingPid = pid;
+  console.log(`--- Vote STARTED for project [${project.name}]`);
   res.status(200).send("ok");
 });
 
-router.get("/count", (req, res) => {
-  const { pid } = req.query;
-  const result = voteResults.find((p) => p.pid === pid);
-
-  res.status(200).json({ count: result.votes.length, current: votingPid });
+router.post("/stop", (_, res) => {
+  global.votingPid = null;
+  console.log(`--- Vote STOPPED ---`);
+  res.status(200).send("");
 });
 
-router.get("/result", (req, res) => {
-  const { voteResults, projects } = global;
-  const results = voteResults.map((r) => {
-    const pname = projects.find(({ pid }) => pid === r.pid)?.name;
+/**
+ * Vote flow(basic checking like param not null will not be explaned here):
+ * 1. if  given deviceId is not "admin"
+ *  - check if it's a trusted device(configured in .env)
+ *  - check if device had been submitted
+ * 2. get score value of this vote(configured in .env)
+ *  - admin-down for -2
+ *  - admin-up for 1
+ *  - common for 1
+ * 3. check if given deviceId exsied in record, if so just return success
+ * 4. insert into vote_record with deviceId
+ * 5. insert into project_vote_relationship with record_id and project_id
+ */
+router.post("/submit", async (req, res) => {
+  const { deviceId, pid } = req.body;
+  const currentPid = pid || votingPid;
+  if (!deviceId) {
+    res.status(400).send(`You should provide a deviceId.`);
+    return;
+  }
+  if (!currentPid) {
+    res.status(400).send(`Vote not started yet.`);
+    return;
+  }
+  try {
+    if (!deviceId.startsWith("admin")) {
+      // check if is trusted devices
+      if (USE_TRUSTED_DEVICES) {
+        const trustDeviceSql =
+          "SELECT COUNT(*) AS deviceCount FROM trusted_device WHERE id = ?";
+        const { deviceCount } = await dbGet(trustDeviceSql, [deviceId]);
+        if (deviceCount == 0) {
+          res
+            .status(400)
+            .send(`Given device is not a trusted device, please check.`);
+          return;
+        }
+      }
 
-    return { pid: r.pid, name: pname, count: r.votes.length };
-  });
-  res.status(200).json(results);
+      // check if voted
+      const votedCheckSql = `SELECT vr.*
+        FROM vote_record vr
+        JOIN project_vote_relationship pvr ON vr.id = pvr.vote_id
+        WHERE pvr.project_id = ? AND vr.device_id = ?;
+      `;
+      const votedRows = await dbAll(votedCheckSql, [currentPid, deviceId]);
+      if (votedRows.length > 0) {
+        res.status(400).send("This device had been already voted.");
+        return;
+      }
+    }
+
+    const score =
+      deviceId === "admin-down"
+        ? VOTE_ADMIN_DOWN_SCORE
+        : deviceId === "admin-up"
+        ? VOTE_ADMIN_UP_SCORE
+        : VOTE_SCORE;
+    const vid = uuidv4();
+    const time = new Date();
+    // consider a statement below
+    const addVoteRecordSql =
+      "INSERT INTO vote_record (id, time, device_id, score) VALUES (?, ?, ?, ?)";
+    await dbRun(addVoteRecordSql, [vid, time, deviceId, score]);
+
+    const addRelationSql =
+      "INSERT INTO project_vote_relationship (vote_id, project_id) VALUES (?, ?)";
+    await dbRun(addRelationSql, [vid, currentPid]);
+
+    const result = await getScoreOfProject(currentPid);
+    res.status(200).send(result);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send(`Error occured in voting.`);
+  }
+});
+
+router.post("/reset", async (req, res) => {
+  try {
+    const { pid } = req.body;
+    const deleteRelationshipSQL =
+      "DELETE FROM project_vote_relationship WHERE project_id = ?";
+    await dbRun(deleteRelationshipSQL, [pid]);
+    const deleteVoteRecordSQL =
+      "DELETE FROM vote_record WHERE id NOT IN (SELECT vote_id FROM project_vote_relationship)";
+    await dbRun(deleteVoteRecordSQL);
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+});
+
+router.get("/project/:pid/total", async (req, res) => {
+  const { pid } = req.params;
+
+  try {
+    const summarySql = `
+      SELECT SUM(vr.score) AS total
+      FROM vote_record vr
+      JOIN project_vote_relationship pvr ON vr.id = pvr.vote_id
+      WHERE pvr.project_id = ?;
+    `;
+    const _result = await dbAll(summarySql, [pid]);
+    const result = _result[0];
+    if (result.total === null) result.total = 0;
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
+});
+
+router.get("/results", async (_, res) => {
+  try {
+    const sql = `
+      SELECT pvr.project_id AS projectId, SUM(vr.score) AS total
+      FROM project_vote_relationship pvr
+      JOIN vote_record vr ON pvr.vote_id = vr.id
+      GROUP BY pvr.project_id;
+    `;
+
+    const result = await dbAll(sql);
+    console.log(result);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
+  }
 });
 
 module.exports = router;

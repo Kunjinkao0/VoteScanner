@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Vote Reader</string>
     <string name="default_host">192.168.1.1</string>
+    <string name="default_read_text">Tap back to read</string>
 </resources>

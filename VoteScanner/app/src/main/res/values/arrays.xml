@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string-array name="option_labels">
+        <item>NFC test only</item>
+        <item>Device register</item>
+        <item>Vote reader</item>
+    </string-array>
+
+    <string-array name="option_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+</resources>

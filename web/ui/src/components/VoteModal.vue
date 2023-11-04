@@ -1,6 +1,6 @@
 <template>
   <div class="mask" @click="closeModal">
-    <div class="modal-wrapper" @click.stop>
+    <div class="modal-wrapper noselect" @click.stop>
       <div class="content">
         <div class="details">
           <div class="left">
@@ -83,16 +83,16 @@ const nextClick = () => {
   stopVote();
 }
 
-const refreshVoteCount = async () => {
+const refreshVoteTotal = async () => {
   try {
-    const result = await axios.get(`/api/vote/count?pid=${props.project.pid}`);
-    total.value = result.count;
+    const result = await axios.get(`/api/vote/project/${props.project.id}/total`);
+    total.value = result.total;
   } catch (e) {
   }
 }
 
 onMounted(() => {
-  refreshVoteCount();
+  refreshVoteTotal();
   window.addEventListener('keydown', handleKeyPress);
 });
 
@@ -101,7 +101,7 @@ onBeforeUnmount(() => {
 });
 
 watch(() => props.project, () => {
-  refreshVoteCount();
+  refreshVoteTotal();
 });
 
 const handleKeyPress = (event) => {
@@ -111,6 +111,8 @@ const handleKeyPress = (event) => {
     prevClick();
   } else if (event.key === 'ArrowRight') {
     nextClick();
+  } else if (event.key === 'Enter') {
+    toggleVote();
   }
 }
 
@@ -125,11 +127,11 @@ const toggleVote = async () => {
 let intervalSeq = -1;
 const startVote = async () => {
   try {
-    await axios.get(`/api/vote/start?pid=${props.project.pid}`);
+    await axios.post(`/api/vote/start`, { pid: props.project.id });
     isVoting.value = true;
 
     intervalSeq = setInterval(() => {
-      refreshVoteCount();
+      refreshVoteTotal();
     }, 1000);
   } catch (e) {
     console.error(e);
@@ -141,7 +143,7 @@ const stopVote = async () => {
     clearInterval(intervalSeq);
   }
   try {
-    await axios.get(`/api/vote/stop`);
+    await axios.post(`/api/vote/stop`);
     isVoting.value = false;
   } catch (e) {
     console.error(e);
@@ -150,7 +152,7 @@ const stopVote = async () => {
 
 const resetVote = async () => {
   try {
-    await axios.get(`/api/vote/reset?pid=${props.project.pid}`);
+    await axios.post(`/api/vote/reset`, { pid: props.project.id });
     total.value = 0;
   } catch (e) {
     console.error(e);
@@ -159,9 +161,9 @@ const resetVote = async () => {
 
 const changeVote = async (seq) => {
   try {
-    const deviceId = seq > 0 ? "admin-" + new Date().getTime() : "admin-pop";
-    const result = await axios.get(`/api/vote/submit?deviceId=${deviceId}&pid=${props.project.pid}`);
-    total.value = result.count;
+    const deviceId = seq > 0 ? "admin-up" : "admin-down";
+    const result = await axios.post(`/api/vote/submit`, { pid: props.project.id, deviceId });
+    total.value = result.total;
   } catch (e) {
     console.error(e);
   }
@@ -287,11 +289,13 @@ $border-radius: 24px;
         // border: none;
         // background-color: #ccc;
         cursor: pointer;
-        background: #aaa;
-        border: 4px solid #aaa;
+        background: #777;
+        border: none;
 
-        img:hover {
-          scale: 1.2;
+        &:hover {
+          transition: transform .3s ease, box-shadow .3s ease;
+          box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.5);
+          transform: translateY(-4px);
         }
       }
     }
@@ -309,9 +313,10 @@ $border-radius: 24px;
   overflow: hidden;
   cursor: pointer;
 
-  &:hover {
-    transition: transform 0.3s;
-    transform: scale(1.2);
+  img:hover {
+    transition: transform 0.3s ease, box-shadow .3s ease;
+    filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
+    transform: translateY(-4px);
   }
 }
 
@@ -326,8 +331,9 @@ $border-radius: 24px;
   cursor: pointer;
 
   img:hover {
-    transition: transform 0.3s;
-    transform: scale(1.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    filter: drop-shadow(2px 6px 10px rgba(0, 0, 0, 0.5));
+    transform: translateY(-4px);
   }
 
   &-left {

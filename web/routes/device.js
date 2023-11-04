@@ -1,18 +1,26 @@
 const express = require("express"),
   router = express.Router();
 
-const { writeFile, PATH_DEVICES } = require("../utils");
+const { dbRun, dbGet } = require("../db");
 
-router.put("/:id", (req, res) => {
-  const { allowedDevices } = global;
-  const deviceId = req.params.id;
+router.put("/", async (req, res) => {
+  try {
+    const { deviceId } = req.body;
 
-  if (!allowedDevices.includes(deviceId)) {
-    allowedDevices.push(deviceId);
-    writeFile(PATH_DEVICES, allowedDevices);
+    const querySql = "SELECT id FROM trusted_device where id = ?";
+    const existed = await dbGet(querySql, [deviceId]);
+    if (existed) {
+      res.status(400).send("Already registed.");
+      return;
+    }
+
+    const sql = "INSERT INTO trusted_device (id) VALUES (?)";
+    await dbRun(sql, [deviceId]);
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err);
   }
-
-  res.status(200).send("ok");
 });
 
 module.exports = router;

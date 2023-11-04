@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "init-db": "node db/init.js",
     "serve": "nodemon app.js"
   },
   "nodemonConfig": {
     "ignore": [
       "datas/*.json",
-      "ui/"
+      "ui/",
+      "db/"
     ]
   },
   "author": "",
@@ -19,6 +21,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "nodemon": "^3.0.1",
+    "sqlite3": "^5.1.6",
     "uuid": "^9.0.1"
   }
 }
