@@ -18,4 +18,11 @@
         android:key="read_mode"
         android:summary="Choose to setup how reader works"
         android:title="Reader app mode" />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:icon="@drawable/brightness_high"
+        android:key="screen_on"
+        android:summary="Keep the screen on when this app is in use"
+        android:title="Keep Screen On" />
 </PreferenceScreen>

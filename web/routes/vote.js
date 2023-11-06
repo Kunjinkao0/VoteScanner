@@ -63,7 +63,7 @@ router.post("/submit", async (req, res) => {
     return;
   }
   if (!currentPid) {
-    res.status(400).send(`Vote not started yet.`);
+    res.status(428).send(`Vote not started yet.`);
     return;
   }
   try {
@@ -75,7 +75,7 @@ router.post("/submit", async (req, res) => {
         const { deviceCount } = await dbGet(trustDeviceSql, [deviceId]);
         if (deviceCount == 0) {
           res
-            .status(400)
+            .status(401)
             .send(`Given device is not a trusted device, please check.`);
           return;
         }
@@ -89,7 +89,7 @@ router.post("/submit", async (req, res) => {
       `;
       const votedRows = await dbAll(votedCheckSql, [currentPid, deviceId]);
       if (votedRows.length > 0) {
-        res.status(400).send("This device had been already voted.");
+        res.status(409).send("This device had been already voted.");
         return;
       }
     }

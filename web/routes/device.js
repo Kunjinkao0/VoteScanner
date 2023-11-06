@@ -10,7 +10,7 @@ router.put("/", async (req, res) => {
     const querySql = "SELECT id FROM trusted_device where id = ?";
     const existed = await dbGet(querySql, [deviceId]);
     if (existed) {
-      res.status(400).send("Already registed.");
+      res.status(409).send("Already registed.");
       return;
     }
 

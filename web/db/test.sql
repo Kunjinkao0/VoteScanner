@@ -1,3 +1,4 @@
+-- reset all
 DROP TABLE IF EXISTS activity;
 DROP TABLE IF EXISTS trusted_device;
 DROP TABLE IF EXISTS project;
@@ -52,3 +53,10 @@ CREATE TABLE IF NOT EXISTS project_vote_relationship (
   FOREIGN KEY (vote_id) REFERENCES vote_record(id),
   FOREIGN KEY (project_id) REFERENCES project(id)
 );
+
+-- delete 
+DELETE FROM project;
+DELETE FROM project_vote_relationship;
+DELETE FROM vote_record;
+
+-- sqlite3 vote_c.db ".dump trusted_device" > trusted_device.sql

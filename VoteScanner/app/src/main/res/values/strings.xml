@@ -1,5 +1,13 @@
 <resources>
-    <string name="app_name">Vote Reader</string>
+    <string name="app_name">投票读卡器</string>
     <string name="default_host">192.168.1.1</string>
-    <string name="default_read_text">Tap back to read</string>
+    <string name="default_pending_text">扫描手机背面以识别</string>
+
+    <string name="submitting">正在提交…</string>
+    <string name="submit_success">提交成功</string>
+    <string name="submit_failure">提交失败</string>
+    <string name="vote_duplicate">重复记录</string>
+    <string name="vote_not_start">投票未开始</string>
+    <string name="vote_device_unauthorized">非授权投票设备</string>
+    <string name="network_error">网络错误</string>
 </resources>

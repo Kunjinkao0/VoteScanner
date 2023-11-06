@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/scan_wrapper"
     tools:context=".MainActivity">
 
     <TextView
@@ -13,8 +14,9 @@
         android:layout_centerInParent="true"
         android:layout_marginLeft="24dp"
         android:layout_marginRight="24dp"
-        android:text="@string/default_read_text"
-        android:textSize="50dp" />
+        android:text="@string/default_pending_text"
+        android:textColor="@color/text_primary"
+        android:textSize="40dp" />
 
     <TextView
         android:id="@+id/mode"

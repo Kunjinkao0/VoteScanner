@@ -66,7 +66,7 @@ onMounted(() => {
 
 const getProjects = async () => {
   const result = await axios.get('/api/projects');
-  projects.value = result;
+  projects.value = result.sort((a, b) => a.desc.localeCompare(b.desc));
 }
 
 const getVoteResults = async () => {
@@ -192,7 +192,7 @@ li {
     }
 
     .card {
-      padding: 20px 20px 20px 20px;
+      padding: 20px 20px 12px 20px;
       margin: 20px;
       min-height: 300px;
       cursor: pointer;
@@ -217,14 +217,14 @@ li {
     font-weight: 600;
     text-align: center;
     color: #eee;
-    font-size: 12px;
+    font-size: 16px;
     text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
   }
 
   .project-name {
     font-weight: 600;
     text-align: center;
-    font-size: 16px;
+    font-size: 20px;
     margin: 0 20px;
     color: #fff;
     text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
