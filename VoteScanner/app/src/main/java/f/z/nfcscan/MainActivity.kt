@@ -85,8 +85,6 @@ class MainActivity : AppCompatActivity() {
         val optionLabels = resources.getStringArray(R.array.option_labels)
         findViewById<TextView>(R.id.mode).text = optionLabels[selectedIndex]
 
-        updateTextView(getString(R.string.default_pending_text))
-
         findViewById<View>(R.id.scan_wrapper).keepScreenOn =
             sharedPreferences.getBoolean("screen_on", true)
     }
@@ -97,7 +95,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleNfc(on: Boolean) {
-        if (on && nfcAdapter?.isEnabled() == true) {
+        if (on && nfcAdapter?.isEnabled == true) {
             nfcAdapter?.enableForegroundDispatch(this, nfcPendingIntent, null, null)
         } else {
             nfcAdapter?.disableForegroundDispatch(this)
@@ -129,12 +127,18 @@ class MainActivity : AppCompatActivity() {
             val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
             val deviceId = bytesToHexString(tag?.id)
 
-            if (readerMode == MODE_NFC_TEST) {
-                updateTextView("DeviceId: ${deviceId}")
-            } else if (readerMode == MODE_DEVICE_REGISTER) {
-                deviceRegSubmit(deviceId)
-            } else if (readerMode == MODE_VOTE_READER) {
-                voteSubmit(deviceId)
+            when (readerMode) {
+                MODE_NFC_TEST -> {
+                    updateTextView("DeviceId: $deviceId")
+                }
+
+                MODE_DEVICE_REGISTER -> {
+                    deviceRegSubmit(deviceId)
+                }
+
+                MODE_VOTE_READER -> {
+                    voteSubmit(deviceId)
+                }
             }
         }
     }

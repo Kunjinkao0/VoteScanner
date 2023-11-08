@@ -60,3 +60,5 @@ DELETE FROM project_vote_relationship;
 DELETE FROM vote_record;
 
 -- sqlite3 vote_c.db ".dump trusted_device" > trusted_device.sql
+
+select count(*) from trusted_device;
