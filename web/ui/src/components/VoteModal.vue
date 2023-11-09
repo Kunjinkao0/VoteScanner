@@ -1,58 +1,62 @@
 <template>
   <div class="mask" @click="closeModal">
-    <div class="modal-wrapper noselect" @click.stop>
-      <div class="content">
-        <div class="details">
-          <div class="left">
-            <div class="project-desc">
-              {{ props.project.desc }}
+    <Transition name="modal">
+      <div v-if="initShow" class="modal-wrapper noselect" @click.stop>
+        <div class="content">
+          <div class="details">
+            <div class="left">
+              <div class="project-desc">
+                {{ props.project.desc }}
+              </div>
+              <div class="project-name">
+                {{ props.project.name }}
+              </div>
+              <div>
+                <image class="project-cover" :src="coverImg" />
+              </div>
             </div>
-            <div class="project-name">
-              {{ props.project.name }}
-            </div>
-            <div>
-              <image class="project-cover" :src="coverImg" />
+            <div class="right">
+              <div class="vote-number">
+                <span class="vote-number-frame">{{ total }}</span>
+              </div>
             </div>
           </div>
-          <div class="right">
-            <div class="vote-number">
-              <span class="vote-number-frame">{{ total }}</span>
+
+          <div class="control-btns">
+            <div class="control-btns-left">
+              <button class="vote-ctrl" @click="resetVote()">
+                <img src="@/assets/reset.svg" alt="Vote reset" width="48" height="48" />
+              </button>
+              <button class="vote-ctrl" @click="changeVote(-1)">
+                <img src="@/assets/minus.svg" alt="Vote down" width="48" height="48" />
+              </button>
+              <button class="vote-ctrl" @click="changeVote(1)">
+                <img src="@/assets/plus.svg" alt="Vote up" width="48" height="48" />
+              </button>
             </div>
+            <button class="vote-ctrl" style="width:400px; margin-left: 100px;" @click="toggleVote()">
+              <img v-if="!isVoting" src="@/assets/start.svg" alt="Vote start" width="48" height="48" />
+              <img v-if="isVoting" src="@/assets/stop.svg" alt="Vote stop" width="48" height="48" />
+            </button>
           </div>
         </div>
 
-        <div class="control-btns">
-          <div class="control-btns-left">
-            <button class="vote-ctrl" @click="resetVote()">
-              <img src="@/assets/reset.svg" alt="Vote reset" width="48" height="48" />
-            </button>
-            <button class="vote-ctrl" @click="changeVote(-1)">
-              <img src="@/assets/minus.svg" alt="Vote down" width="48" height="48" />
-            </button>
-            <button class="vote-ctrl" @click="changeVote(1)">
-              <img src="@/assets/plus.svg" alt="Vote up" width="48" height="48" />
-            </button>
-          </div>
-          <button class="vote-ctrl" style="width:400px; margin-left: 100px;" @click="toggleVote()">
-            <img v-if="!isVoting" src="@/assets/start.svg" alt="Vote start" width="48" height="48" />
-            <img v-if="isVoting" src="@/assets/stop.svg" alt="Vote stop" width="48" height="48" />
-          </button>
-        </div>
+        <button v-if="!props.isFirst" class="btn-center btn-center-left" @click="prevClick">
+          <img src="@/assets/caret-left.svg" alt="Previous" width="48" height="48" />
+        </button>
+        <button v-if="!props.isLast" class="btn-center btn-center-right" @click="nextClick">
+          <img src="@/assets/caret-right.svg" alt="Next" width="48" height="48" />
+        </button>
+        <button class="btn-close" @click="closeModal">
+          <img src="@/assets/close.svg" alt="Close" width="48" height="48" />
+        </button>
+        <GeekLogo class="geek-logo noselect" @click.stop />
       </div>
-
-      <button v-if="!props.isFirst" class="btn-center btn-center-left" @click="prevClick">
-        <img src="@/assets/caret-left.svg" alt="Previous" width="48" height="48" />
-      </button>
-      <button v-if="!props.isLast" class="btn-center btn-center-right" @click="nextClick">
-        <img src="@/assets/caret-right.svg" alt="Next" width="48" height="48" />
-      </button>
-      <button class="btn-close" @click="closeModal">
-        <img src="@/assets/close.svg" alt="Close" width="48" height="48" />
-      </button>
-    </div>
+    </Transition>
   </div>
 </template>
 <script setup>
+import GeekLogo from './GeekLogo.vue';
 import { defineEmits, defineProps, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import axios from '../requestor';
 
@@ -64,6 +68,7 @@ const isVoting = ref(false);
 const total = ref(0);
 
 const coverImg = ref(require('@/assets/logo-with-shade.png'));
+const initShow = ref(false);
 
 const closeModal = () => {
   emit('modalVisible', false);
@@ -87,6 +92,9 @@ const refreshVoteTotal = async () => {
 }
 
 onMounted(() => {
+  setTimeout(() => {
+    initShow.value = true;
+  }, 1);
   refreshVoteTotal();
   window.addEventListener('keydown', handleKeyPress);
 });
@@ -178,6 +186,17 @@ $border-radius: 24px;
   // background-color: #fff;
 }
 
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: translateY(50%);
+}
+
 .modal-wrapper {
   border-image-source: url('~@/assets/bg-modal.png');
   border-image-slice: 100 fill;
@@ -216,7 +235,7 @@ $border-radius: 24px;
         justify-content: center;
 
         .project-name {
-          font-size: 50px;
+          font-size: 100px;
           font-weight: 600;
           color: #fff;
           text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
@@ -224,7 +243,7 @@ $border-radius: 24px;
         }
 
         .project-desc {
-          font-size: 30px;
+          font-size: 40px;
           color: #eee;
           text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.5);
           font-weight: 600;
@@ -242,7 +261,7 @@ $border-radius: 24px;
         justify-content: center;
 
         .vote-number {
-          font-size: 120px;
+          font-size: 200px;
           width: 100%;
           height: 400px;
           display: flex;
@@ -253,9 +272,9 @@ $border-radius: 24px;
 
           &-frame {
             border: 1px dashed #ccc;
-            width: 320px;
-            height: 240px;
-            line-height: 240px;
+            width: 400px;
+            height: 320px;
+            line-height: 320px;
             text-align: center;
           }
         }
@@ -337,5 +356,11 @@ $border-radius: 24px;
   &-right {
     right: 16px;
   }
+}
+
+.geek-logo {
+  position: absolute;
+  top: 40px;
+  left: 32%;
 }
 </style>

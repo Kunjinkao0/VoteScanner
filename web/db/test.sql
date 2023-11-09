@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS project_vote_relationship (
 DELETE FROM project;
 DELETE FROM project_vote_relationship;
 DELETE FROM vote_record;
+DELETE FROM trusted_device;
 
 -- sqlite3 vote_c.db ".dump trusted_device" > trusted_device.sql
 

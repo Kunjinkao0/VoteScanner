@@ -112,18 +112,17 @@ const changeProject = (accum) => {
 }
 
 const exportData = () => {
-  let csvContent = "data:text/csv;charset=utf-8,";
-  csvContent += "Project Name,Score\r\n";
-
+  let csvContent = "Team,Score\r\n";
   sortedProjects.value.forEach((p) => {
     const rowData = [p.name, p.total];
     csvContent += rowData.map(d => `${d}`).join(',') + '\r\n';
   });
 
-  const encodedURI = encodeURI(csvContent);
+  const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.setAttribute('href', encodedURI);
-  link.setAttribute('download', 'data.csv');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Score_${new Date().toTimeString().split(' ')[0].replace(/:/g, '')}.csv`);
   document.body.appendChild(link);
   link.click();
 
@@ -236,7 +235,7 @@ li {
     flex: 1;
     justify-content: center;
     align-items: center;
-    font-size: 80px;
+    font-size: 100px;
     font-weight: 600;
     color: #fff;
     text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
@@ -299,13 +298,12 @@ li {
 
     .list-item {
       box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6);
-      background-color: rgba(0, 0, 0, 0.3);
+      background-color: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(10px);
       // height: 40px;
       margin: 8px 40px;
-      padding: 12px 20px;
+      padding: 20px 20px;
       color: #FFF;
-      font-size: 24px;
       text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
       display: flex;
       align-items: center;
@@ -313,7 +311,7 @@ li {
       &:hover {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.5);
-        transform: translateX(-4px);
+        transform: translateX(-8px);
       }
 
       // &:not(:first-child) {
@@ -327,19 +325,24 @@ li {
     }
 
     .project-index {
-      font-size: 20px;
+      font-size: 24px;
       flex: 0 0 80px;
       text-align: left;
       color: #CCC;
+      margin-left: 20px;
     }
 
     .project-name {
       flex: 1;
+      padding-left: 20px;
       text-align: left;
+      font-size: 28px;
     }
 
     .project-vote {
+      font-size: 28px;
       flex: 0 0 20px;
+      margin-right: 20px;
     }
   }
 }
