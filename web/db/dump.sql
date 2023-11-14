@@ -52,7 +52,7 @@ INSERT INTO project VALUES('57614003-ca56-4a3e-a91c-448e78f7ccdb','六神有组'
 INSERT INTO project VALUES('4aa9d77d-bbfc-433f-a39f-1f0a85c97f05','富达钱包','I-30',NULL);
 INSERT INTO project VALUES('b252672a-1999-45d1-ad8f-2834550bc03a','三侠五义','I-02',NULL);
 INSERT INTO project VALUES('540c92e5-c9ae-4c01-8ae1-fdce7e296d92','YOUTH CODE','I-03',NULL);
-INSERT INTO project VALUES('5c196cdf-8bc1-4980-9eef-72609d8e03f6','我是你的眼','I-04',NULL);
+INSERT INTO project VALUES('5c196cdf-8bc1-4980-9eef-72609d8e03f6','AI-DCE','E-20',NULL);
 CREATE TABLE activity_project_relationship (
   activity_id UUID,
   project_id UUID,

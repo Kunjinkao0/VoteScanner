@@ -66,7 +66,7 @@ onMounted(() => {
 
 const getProjects = async () => {
   const result = await axios.get('/api/projects');
-  projects.value = result.sort((a, b) => a.desc.localeCompare(b.desc));
+  projects.value = result.sort((a, b) => a.desc?.localeCompare(b.desc));
 }
 
 const getVoteResults = async () => {
